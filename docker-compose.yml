@@ -1,0 +1,31 @@
+services:
+  backend:
+    image: backend
+    container_name: backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src:/app/src
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+
+  frontend:
+    image: frontend
+    pull_policy: never
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 5173:5173
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Prevents local node_modules from overriding container ones
+    environment:
+      - VITE_API_URL=http://backend:8000 # Use backend service name
+    depends_on:
+      - backend
