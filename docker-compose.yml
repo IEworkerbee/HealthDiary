@@ -7,11 +7,19 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5000:5000"
+ 
     volumes:
-      - ./src:/app/src
+      - ./backend/src:/app/src
+      - ./backend/db:/app/db
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+  
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB=healthdiary
+    depends_on:
+      - mongo
+    
 
   frontend:
     image: frontend
@@ -29,3 +37,14 @@ services:
       - VITE_API_URL=http://backend:8000 # Use backend service name
     depends_on:
       - backend
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire src directory into the container
 COPY src/ ./src/
 
+#Copy the MongoDB layer so Flask routes can import db.repository / db.models.
+COPY db/ ./db/
+
 # Set environment variables
 ENV FLASK_APP=src
 ENV FLASK_RUN_HOST=0.0.0.0

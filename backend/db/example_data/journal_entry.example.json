@@ -1,0 +1,58 @@
+{
+  "_id": "665a1f8b9e2c4a1b8c7d0001",
+  "main_symptom": "migraine",
+  "event_datetime": "2026-05-23T14:00:00Z",
+  "pain_level": 8,
+  "mood": 3,
+  "functional_impact": "severe",
+  "medications": [
+    {
+      "name": "Sumatriptan",
+      "dosage": 50,
+      "unit": "mg",
+      "time_taken": "2026-05-23T14:15:00Z"
+    },
+    {
+      "name": "Ibuprofen",
+      "dosage": 400,
+      "unit": "mg",
+      "time_taken": "2026-05-23T14:20:00Z"
+    }
+  ],
+  "triggers": ["stress", "skipped meal", "bright lights"],
+  "notes": "Auras started around 1pm. Had to leave class early and lie down.",
+  "body_locations": ["head", "neck"],
+  "current_treatment": "Sumatriptan + dark room",
+  "custom_ratings": [],
+  "tags": ["migraine", "school"],
+  "preferences_snapshot": {
+    "active_modules": [
+      "pain_level",
+      "mood",
+      "medications",
+      "triggers",
+      "notes",
+      "body_locations",
+      "functional_impact",
+      "current_treatment",
+      "custom_ratings",
+      "tags"
+    ],
+    "module_order": [
+      "pain_level",
+      "mood",
+      "medications",
+      "triggers",
+      "notes",
+      "body_locations",
+      "functional_impact",
+      "current_treatment",
+      "custom_ratings",
+      "tags"
+    ],
+    "snapshot_version": 1
+  },
+  "created_at": "2026-05-23T14:30:00Z",
+  "updated_at": "2026-05-23T14:30:00Z",
+  "deleted_at": null
+}

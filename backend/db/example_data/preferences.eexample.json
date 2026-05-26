@@ -1,0 +1,29 @@
+{
+  "_id": "active",
+  "active_modules": [
+    "pain_level",
+    "mood",
+    "medications",
+    "triggers",
+    "notes",
+    "body_locations",
+    "functional_impact",
+    "current_treatment",
+    "custom_ratings",
+    "tags"
+  ],
+  "module_order": [
+    "pain_level",
+    "mood",
+    "medications",
+    "triggers",
+    "notes",
+    "body_locations",
+    "functional_impact",
+    "current_treatment",
+    "custom_ratings",
+    "tags"
+  ],
+  "snapshot_version": 1,
+  "updated_at": "2026-05-25T17:00:00Z"
+}
