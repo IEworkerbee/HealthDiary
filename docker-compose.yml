@@ -1,6 +1,6 @@
 services:
   backend:
-    image: backend
+    #image: backend
     container_name: backend
     build: 
       context: ./backend
@@ -22,8 +22,8 @@ services:
     
 
   frontend:
-    image: frontend
-    pull_policy: never
+    #image: frontend
+    #pull_policy: never
     container_name: frontend
     build:
       context: ./frontend
@@ -34,7 +34,7 @@ services:
       - ./frontend:/app
       - /app/node_modules # Prevents local node_modules from overriding container ones
     environment:
-      - VITE_API_URL=http://backend:8000 # Use backend service name
+      - VITE_API_URL=http://backend:5000 # Use backend service name
     depends_on:
       - backend
 

@@ -1,13 +1,11 @@
 """
-  Hi this is Kaegan! The source for this code is 
-  https://flask.palletsprojects.com/en/stable/tutorial/factory/
-  Continue through this if you want to get a general concept of a flask api project structure
-  Or do whatevs! 
+  
 """
 
 import os
 
 from flask import Flask
+from pymongo import MongoClient  # MongoDB connection
 
 def create_app(test_config=None):
     # create and configure the app

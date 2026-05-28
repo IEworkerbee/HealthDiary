@@ -13,7 +13,7 @@ COPY src/ ./src/
 COPY db/ ./db/
 
 # Set environment variables
-ENV FLASK_APP=src
+ENV FLASK_APP=src/API.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
 EXPOSE 5000
