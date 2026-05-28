@@ -18,6 +18,9 @@ install-clean:
 	python -m venv .venv
 	$(MAKE) install
 
+npm-install:
+	cd frontend && npm install && cd..
+
 run:
 	docker run -p 5000:5173 -d --rm healthdiary:latest
 
