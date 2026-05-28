@@ -8,4 +8,14 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    host: true,
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://backend:5000', // Optional: Proxy API calls
+        changeOrigin: true,
+      }
+    }
+  }
 })

@@ -1,7 +1,7 @@
 services:
   backend:
-    #image: backend
-    container_name: backend
+    image: healthdiary-backend
+    container_name: healthdiary-backend
     build: 
       context: ./backend
       dockerfile: Dockerfile
@@ -22,9 +22,9 @@ services:
     
 
   frontend:
-    #image: frontend
-    #pull_policy: never
-    container_name: frontend
+    image: healthdiary-frontend
+    pull_policy: never
+    container_name: healthdiary-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile

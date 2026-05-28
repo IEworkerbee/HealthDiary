@@ -26,11 +26,10 @@ run:
 
 # Docker
 docker-up:
-	docker compose up -d --build -t healthdiary
+	docker compose -p healthdiary up -d --build
 
 docker-build:
-	docker compose build -t healthdiary
+	docker compose -p healthdiary build 
 
 docker-down:
-	docker compose down
-
+	docker compose -p healthdiary down
