@@ -1,6 +1,7 @@
 services:
   backend:
     image: healthdiary-backend
+    pull_policy: never
     container_name: healthdiary-backend
     build: 
       context: ./backend
