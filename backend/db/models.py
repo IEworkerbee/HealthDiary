@@ -252,3 +252,59 @@ class UserPreferences(BaseModel):
             snapshot_version=self.snapshot_version,
         )
 
+
+class PDFExportRecord(BaseModel):
+    """
+    Metadata for one generated PDF export.
+
+    The actual PDF file lives on disk; this document just records *that*
+    an export happened, what filters produced it, and where to find the
+    file again. Useful for the "Recent Exports" list and for audit/recovery.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    # --- Required ---------------------------------------------------------
+    filename: str = Field(min_length=1, description="Generated file name, e.g. 'healthdiary-2026-05.pdf'")
+    entry_count: int = Field(ge=0, description="How many journal entries were included")
+
+    # --- Optional ---------------------------------------------------------
+    storage_path: Optional[str] = Field(default=None, description="Absolute or app-relative path on disk")
+    file_size_bytes: Optional[int] = Field(default=None, ge=0)
+    label: Optional[str] = Field(default=None, max_length=200, description="User-provided name for this export")
+
+    # The filters that produced this export, so it can be regenerated or
+    # described to the user. We deliberately keep this small and explicit
+    # rather than dumping arbitrary query JSON.
+    date_range_start: Optional[datetime] = None
+    date_range_end: Optional[datetime] = None
+    main_symptom: Optional[str] = None
+    min_pain: Optional[int] = Field(default=None, ge=1, le=10)
+    max_pain: Optional[int] = Field(default=None, ge=1, le=10)
+    trigger: Optional[str] = None
+    tag: Optional[str] = None
+
+    @field_validator("filename")
+    @classmethod
+    def _filename_must_not_be_whitespace(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("filename cannot be empty")
+        return v
+
+    @model_validator(mode="after")
+    def _date_range_and_pain_range_must_be_ordered(self) -> "PDFExportRecord":
+        if (
+            self.date_range_start is not None
+            and self.date_range_end is not None
+            and self.date_range_start > self.date_range_end
+        ):
+            raise ValueError("date_range_start must be <= date_range_end")
+        if (
+            self.min_pain is not None
+            and self.max_pain is not None
+            and self.min_pain > self.max_pain
+        ):
+            raise ValueError("min_pain must be <= max_pain")
+        return self
+
