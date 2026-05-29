@@ -9,6 +9,7 @@ import Diary from "./pages/Diary.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 
 import "bootstrap/dist/css/bootstrap.css";
+import "./styles/global.css";
 
 const router = createBrowserRouter([
   {
