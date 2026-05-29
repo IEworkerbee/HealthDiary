@@ -1,12 +1,12 @@
-import { Row, Col, Card, Button, Nav, Tab } from "react-bootstrap";
-import type { JournalEntry } from "../scripts/models";
+import { Row, Col, Card, Button, Nav, Tab, Table } from "react-bootstrap";
+import type { JournalEntry, MedicationLog } from "../scripts/models";
 
 interface Props {
   entry: JournalEntry;
 }
 
 export const DiaryCard = ({ entry }: Props) => {
-  const Logs = Object.entries(entry).reduce((acc, [key, val]) => {
+  const logs = Object.entries(entry).reduce((acc, [key, val]) => {
     if (
       [
         "pain_level",
@@ -18,17 +18,16 @@ export const DiaryCard = ({ entry }: Props) => {
       ].includes(key) &&
       val
     ) {
-      const cleaned_key = key
+      const cleanedKey = key
         .split("_")
-        .map(
-          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-        )
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
-      return { ...acc, [cleaned_key]: val };
+      return { ...acc, [cleanedKey]: val };
     }
     return acc;
   }, {});
 
+  const medicationHeaders = ["Name", "Dosage", "Unit", "Time"];
   return (
     <Tab.Container defaultActiveKey="first">
       <Card className="my-3" border="primary">
@@ -39,7 +38,7 @@ export const DiaryCard = ({ entry }: Props) => {
           <Nav.Item>
             <Nav.Link
               eventKey="second"
-              disabled={!Logs || Object.keys(Logs).length === 0}
+              disabled={!logs || Object.keys(logs).length === 0}
             >
               Logs
             </Nav.Link>
@@ -65,7 +64,7 @@ export const DiaryCard = ({ entry }: Props) => {
             <Tab.Pane eventKey="second">
               <Card.Title>Pain Log</Card.Title>
               <Card.Text>
-                {Object.entries(Logs).map(([key, val], index) => {
+                {Object.entries(logs).map(([key, val], index) => {
                   return (
                     <Row className="mb-2" key={index}>
                       <Col sm={2}>
@@ -84,27 +83,34 @@ export const DiaryCard = ({ entry }: Props) => {
             <Tab.Pane eventKey="third">
               <Card.Title>Medications Taken</Card.Title>
               <Card.Text>
-                {entry.medications &&
-                  entry.medications.map((val, index) => {
-                    return (
-                      <Row className="mb-2" key={index}>
-                        {Object.entries(val).map(([key, val2], index2) => {
-                          return (
-                            <>
-                              <Col sm={2} key={index2}>
-                                <strong>{key}</strong>
-                              </Col>
-                              <Col sm={10} key={index2}>
-                                {typeof val2 === "object"
-                                  ? JSON.stringify(val2)
-                                  : String(val2)}
-                              </Col>
-                            </>
-                          );
+                {entry.medications && (
+                  <Table striped bordered responsive>
+                    <thead>
+                      <tr>
+                        {medicationHeaders?.map((header, index) => {
+                          return <th key={index}>{String(header)}</th>;
                         })}
-                      </Row>
-                    );
-                  })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entry.medications.map((val, index) => {
+                        return (
+                          <tr key={index}>
+                            {medicationHeaders.map((_, index2) => {
+                              return (
+                                <td key={index2}>
+                                  {Object.values(val)[index2]
+                                    ? String(Object.values(val)[index2])
+                                    : "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                )}
               </Card.Text>
             </Tab.Pane>
           </Tab.Content>
