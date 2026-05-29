@@ -1,5 +1,11 @@
+import { NavSideBar } from "../components/NavSideBar";
+
 const Calendars = () => {
-  return <div>Calendars</div>;
+  return (
+    <>
+      <NavSideBar />
+    </>
+  );
 };
 
 export default Calendars;

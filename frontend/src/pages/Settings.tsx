@@ -1,5 +1,11 @@
+import { NavSideBar } from "../components/NavSideBar";
+
 const Settings = () => {
-  return <div>Settings</div>;
+  return (
+    <>
+      <NavSideBar />
+    </>
+  );
 };
 
 export default Settings;

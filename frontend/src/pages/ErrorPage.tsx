@@ -1,5 +1,12 @@
+import { NavSideBar } from "../components/NavSideBar";
+
 const ErrorPage = () => {
-  return <div>404 Page not Found</div>;
+  return (
+    <>
+      <NavSideBar />
+      <h1>404 Page not found!</h1>
+    </>
+  );
 };
 
 export default ErrorPage;
