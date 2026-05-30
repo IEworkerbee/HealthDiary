@@ -33,3 +33,10 @@ export interface JournalEntry {
     preferences_snapshot?: PreferencesSnapshot
 }
 
+// For Calendar stuff
+export interface JournalEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  route: string;
+}

@@ -1,11 +1,12 @@
 import { Row, Col, Card, Button, Nav, Tab, Table } from "react-bootstrap";
-import type { JournalEntry, MedicationLog } from "../scripts/models";
+import type { JournalEntry } from "../scripts/models";
 
 interface Props {
   entry: JournalEntry;
+  fromCalendar?: boolean;
 }
 
-export const DiaryCard = ({ entry }: Props) => {
+export const DiaryCard = ({ entry, fromCalendar }: Props) => {
   const logs = Object.entries(entry).reduce((acc, [key, val]) => {
     if (
       [
@@ -29,94 +30,97 @@ export const DiaryCard = ({ entry }: Props) => {
 
   const medicationHeaders = ["Name", "Dosage", "Unit", "Time"];
   return (
-    <Tab.Container defaultActiveKey="first">
-      <Card className="my-3" border="primary">
-        <Nav variant="tabs">
-          <Nav.Item>
-            <Nav.Link eventKey="first">Journal Entry</Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link
-              eventKey="second"
-              disabled={!logs || Object.keys(logs).length === 0}
-            >
-              Logs
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link
-              eventKey="third"
-              disabled={!entry.medications || entry.medications.length === 0}
-            >
-              Medications
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
-        <Card.Header as="h5">{entry.date}</Card.Header>
-        <Card.Body>
-          <Tab.Content>
-            <Tab.Pane eventKey="first">
-              <Card.Title>{entry.symptom}</Card.Title>
-              <Card.Text className="mb-2">
-                {entry.notes ?? "No recorded entry."}
-              </Card.Text>
-            </Tab.Pane>
-            <Tab.Pane eventKey="second">
-              <Card.Title>Pain Log</Card.Title>
-              <Card.Text>
-                {Object.entries(logs).map(([key, val], index) => {
-                  return (
-                    <Row className="mb-2" key={index}>
-                      <Col sm={2}>
-                        <strong>{key}</strong>
-                      </Col>
-                      <Col sm={10}>
-                        {typeof val === "object"
-                          ? JSON.stringify(val)
-                          : String(val)}
-                      </Col>
-                    </Row>
-                  );
-                })}
-              </Card.Text>
-            </Tab.Pane>
-            <Tab.Pane eventKey="third">
-              <Card.Title>Medications Taken</Card.Title>
-              <Card.Text>
-                {entry.medications && (
-                  <Table striped bordered responsive>
-                    <thead>
-                      <tr>
-                        {medicationHeaders?.map((header, index) => {
-                          return <th key={index}>{String(header)}</th>;
+    <>
+      <Tab.Container defaultActiveKey="first">
+        <Card className="my-3" border="primary">
+          <Nav variant="tabs">
+            <Nav.Item>
+              <Nav.Link eventKey="first">Journal Entry</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link
+                eventKey="second"
+                disabled={!logs || Object.keys(logs).length === 0}
+              >
+                Logs
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link
+                eventKey="third"
+                disabled={!entry.medications || entry.medications.length === 0}
+              >
+                Medications
+              </Nav.Link>
+            </Nav.Item>
+          </Nav>
+          <Card.Header as="h5">{entry.date}</Card.Header>
+          <Card.Body>
+            <Tab.Content>
+              <Tab.Pane eventKey="first">
+                <Card.Title>{entry.symptom}</Card.Title>
+                <Card.Text className="mb-2">
+                  {entry.notes ?? "No recorded entry."}
+                </Card.Text>
+              </Tab.Pane>
+              <Tab.Pane eventKey="second">
+                <Card.Title>Pain Log</Card.Title>
+                <Card.Text>
+                  {Object.entries(logs).map(([key, val], index) => {
+                    return (
+                      <Row className="mb-2" key={index}>
+                        <Col sm={2}>
+                          <strong>{key}</strong>
+                        </Col>
+                        <Col sm={10}>
+                          {typeof val === "object"
+                            ? JSON.stringify(val)
+                            : String(val)}
+                        </Col>
+                      </Row>
+                    );
+                  })}
+                </Card.Text>
+              </Tab.Pane>
+              <Tab.Pane eventKey="third">
+                <Card.Title>Medications Taken</Card.Title>
+                <Card.Text>
+                  {entry.medications && (
+                    <Table striped bordered responsive>
+                      <thead>
+                        <tr>
+                          {medicationHeaders?.map((header, index) => {
+                            return <th key={index}>{String(header)}</th>;
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {entry.medications.map((val, index) => {
+                          return (
+                            <tr key={index}>
+                              {medicationHeaders.map((_, index2) => {
+                                return (
+                                  <td key={index2}>
+                                    {Object.values(val)[index2]
+                                      ? String(Object.values(val)[index2])
+                                      : "-"}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
                         })}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entry.medications.map((val, index) => {
-                        return (
-                          <tr key={index}>
-                            {medicationHeaders.map((_, index2) => {
-                              return (
-                                <td key={index2}>
-                                  {Object.values(val)[index2]
-                                    ? String(Object.values(val)[index2])
-                                    : "-"}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                )}
-              </Card.Text>
-            </Tab.Pane>
-          </Tab.Content>
-          <Button variant="primary">Edit Entry</Button>
-        </Card.Body>
-      </Card>
-    </Tab.Container>
+                      </tbody>
+                    </Table>
+                  )}
+                </Card.Text>
+              </Tab.Pane>
+            </Tab.Content>
+            <Button variant="primary">Edit Entry</Button>
+          </Card.Body>
+        </Card>
+      </Tab.Container>
+      {fromCalendar && <Button href="/calendar">Go Back</Button>}
+    </>
   );
 };
