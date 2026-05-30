@@ -7,26 +7,16 @@ import {
 } from "react-big-calendar";
 import { useNavigate } from "react-router";
 import moment from "moment";
-import type { JournalEvent } from "../scripts/models";
+import type {
+  JournalEvent,
+  JournalEntry,
+  JournalEntryPackaged,
+  MedicationLog,
+} from "../scripts/models";
 import { CalendarToolBar } from "./CalendarToolBar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
-
-const journalEvents: JournalEvent[] = [
-  {
-    title: "Entry 1",
-    start: moment().toDate(),
-    end: moment().toDate(),
-    route: "/entry/1",
-  },
-  {
-    title: "Entry 0",
-    start: moment().subtract(2, "days").toDate(),
-    end: moment().subtract(2, "days").toDate(),
-    route: "/entry/0",
-  },
-];
 
 interface Props {
   year: string | undefined;
@@ -36,8 +26,11 @@ interface Props {
 export const CalendarMonth = ({ year, month }: Props) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<View>(Views.MONTH);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [journalEvents, setJournalEvents] = useState<JournalEvent[]>([]);
   const navigate = useNavigate();
 
+  // This makes sure we are in the specific month and year passed to this by the Calendar
   useEffect(() => {
     if (year && month) {
       const targetDate = moment({
@@ -49,6 +42,47 @@ export const CalendarMonth = ({ year, month }: Props) => {
       setCurrentDate(new Date());
     }
   }, []);
+
+  // This grabs the Journal Entries for the month and year from the api
+  useEffect(() => {
+    const getJournalEntries = async () => {
+      const response = await fetch(
+        `/api/calendar/${currentDate.getFullYear()}/${currentDate.getMonth() + 1}`,
+      );
+      const data = (await response.json()) as JournalEntryPackaged[];
+      const unpackedData: JournalEntry[] = data.map((entry) => {
+        return {
+          ...entry,
+          event_datetime: new Date(entry.event_datetime),
+          medications: entry.medications?.map((med) => {
+            if (med.time_taken) {
+              return {
+                ...med,
+                time_taken: new Date(med.time_taken),
+              } as MedicationLog;
+            } else {
+              return med as MedicationLog;
+            }
+          }),
+        };
+      });
+      setJournalEntries(unpackedData);
+    };
+    getJournalEntries();
+  }, [currentDate]);
+
+  // This converts Journal Entries into Journal Events for the Calendar
+  useEffect(() => {
+    const newJournalEvents = journalEntries.map((entry: JournalEntry) => {
+      return {
+        title: entry.main_symptom,
+        start: entry.event_datetime,
+        end: entry.event_datetime,
+        route: `/entry/${entry._id}`,
+      };
+    });
+    setJournalEvents(newJournalEvents);
+  }, [journalEntries]);
 
   const handleSelectEvent = (event: JournalEvent) => {
     navigate(event.route);

@@ -53,11 +53,13 @@ export const DiaryCard = ({ entry }: Props) => {
               </Nav.Link>
             </Nav.Item>
           </Nav>
-          <Card.Header as="h5">{entry.date.toLocaleDateString()}</Card.Header>
+          <Card.Header as="h5">
+            {entry.event_datetime.toLocaleDateString()}
+          </Card.Header>
           <Card.Body>
             <Tab.Content>
               <Tab.Pane eventKey="first">
-                <Card.Title>{entry.symptom}</Card.Title>
+                <Card.Title>{entry.main_symptom}</Card.Title>
                 <Card.Text className="mb-2">
                   {entry.notes ?? "No recorded entry."}
                 </Card.Text>
