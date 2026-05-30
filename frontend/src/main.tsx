@@ -9,6 +9,8 @@ import Diary from "./pages/Diary.tsx";
 import DiaryEntry from "./pages/DiaryEntry.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 
+import TempJournalEntryInserter from "./pages/TempJournalEntryInserter.tsx";
+
 import "bootstrap/dist/css/bootstrap.css";
 import "./styles/global.css";
 
@@ -18,10 +20,11 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <ErrorPage />,
   },
-  { path: "/calendar", element: <Calendar /> },
+  { path: "/calendar/:year?/:month?", element: <Calendar /> },
   { path: "/settings", element: <Settings /> },
   { path: "/diary", element: <Diary /> },
   { path: "/entry/:entryID", element: <DiaryEntry /> },
+  { path: "/test", element: <TempJournalEntryInserter /> },
 ]);
 
 createRoot(document.getElementById("root")!).render(

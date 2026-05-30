@@ -1,33 +1,81 @@
-import { Container } from "react-bootstrap";
+import { Container, Pagination } from "react-bootstrap";
+import { useEffect, useState } from "react";
 import { NavSideBar } from "../components/NavSideBar";
 import { DiaryCard } from "../components/DiaryCard";
-import type { JournalEntry } from "../scripts/models";
+import type {
+  JournalEntry,
+  JournalEntryPackaged,
+  MedicationLog,
+} from "../scripts/models";
 
 const Diary = () => {
-  const jentry: JournalEntry[] = [
-    {
-      symptom: "headache",
-      date: "5/28/2026",
-      notes: [
-        "So much I love cats and Lorem Ipsum testing cats lorem ipsum testing cats lorem ipusmin tatlja;j fifodjosdijfoisjdfjoiesjfoijsoijfojsoijfsjoifjsoijfoijsfoijes",
-      ],
-      pain_level: 5,
-      mood: 2,
-      functional_impact: 3,
-      medications: [
-        { name: "Sertraline", dosage: 100, unit: "mg" },
-        { name: "Atomoxetine" },
-      ],
-    },
-    { symptom: "headache", date: "5/29/2026" },
-  ];
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageNumbers = [1, 2, 3];
+
+  useEffect(() => {
+    const getDiaryEntries = async () => {
+      const response = await fetch(`/api/userlogs/7/${(currentPage - 1) * 7}`);
+      const data = (await response.json()).entries as JournalEntryPackaged[];
+      const unpackedData: JournalEntry[] = data.map((entry) => {
+        return {
+          ...entry,
+          event_datetime: new Date(entry.event_datetime),
+          medications: entry.medications?.map((med) => {
+            if (med.time_taken) {
+              return {
+                ...med,
+                time_taken: new Date(med.time_taken),
+              } as MedicationLog;
+            } else {
+              return med as MedicationLog;
+            }
+          }),
+        };
+      });
+      setJournalEntries(unpackedData);
+    };
+    getDiaryEntries();
+  }, []);
+
   return (
     <>
       <NavSideBar />
       <Container>
-        {jentry.map((val, index) => {
+        {journalEntries.map((val, index) => {
           return <DiaryCard entry={val} key={index} />;
         })}
+        <Pagination className="justify-content-center">
+          <Pagination.First
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+          />
+          <Pagination.Prev
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          />
+
+          {pageNumbers.map((number) => (
+            <Pagination.Item
+              key={number}
+              active={number === currentPage}
+              onClick={() => setCurrentPage(number)}
+            >
+              {number}
+            </Pagination.Item>
+          ))}
+
+          <Pagination.Next
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, pageNumbers.length))
+            }
+            disabled={currentPage === pageNumbers.length}
+          />
+          <Pagination.Last
+            onClick={() => setCurrentPage(pageNumbers.length)}
+            disabled={currentPage === pageNumbers.length}
+          />
+        </Pagination>
       </Container>
     </>
   );

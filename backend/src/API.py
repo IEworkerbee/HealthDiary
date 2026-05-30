@@ -11,7 +11,7 @@ from bson import ObjectId
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
 
-mongo_host = os.environ.get('DB_HOST', 'db')
+mongo_host = os.environ.get('MONGO_URI', 'db')
 client = MongoClient(mongo_host, 27017)
 db = client.healthdiary
 
@@ -30,7 +30,7 @@ def store_user_log():
 
     data = request.get_json()
 
-    date = datetime.strptime(data.get("event_datetime", ""), '%d/%m/%Y')
+    date = datetime.strptime(data.get("event_datetime", ""), '%d/%m/%Y %H:%M')
     main_symptom = data.get("main_symptom", "none")
     pain_level = int(data.get("pain_level", "-1"))
     mood = int(data.get("mood", "-1"))
@@ -39,6 +39,9 @@ def store_user_log():
     current_treatment = data.get("current_treatment", None)
 
     medications = data.get("medications", [])       # list of dicts
+    for medication in medications:
+        if ("time_taken" in medication): medication.time_taken = datetime.strptime(medication.time_taken, '%d/%m/%Y %H:%M') # Grabbing time from here too  
+    
     triggers = data.get("triggers", [])             # list of strings
     tags = data.get("tags", [])
     body_locations = data.get("body_locations", [])
