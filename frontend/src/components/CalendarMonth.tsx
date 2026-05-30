@@ -13,6 +13,7 @@ import type {
   JournalEntryPackaged,
   MedicationLog,
 } from "../scripts/models";
+import { unpackageJournalEntry } from "../scripts/helperfuncs";
 import { CalendarToolBar } from "./CalendarToolBar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
@@ -51,20 +52,7 @@ export const CalendarMonth = ({ year, month }: Props) => {
       );
       const data = (await response.json()) as JournalEntryPackaged[];
       const unpackedData: JournalEntry[] = data.map((entry) => {
-        return {
-          ...entry,
-          event_datetime: new Date(entry.event_datetime),
-          medications: entry.medications?.map((med) => {
-            if (med.time_taken) {
-              return {
-                ...med,
-                time_taken: new Date(med.time_taken),
-              } as MedicationLog;
-            } else {
-              return med as MedicationLog;
-            }
-          }),
-        };
+        return unpackageJournalEntry(entry);
       });
       setJournalEntries(unpackedData);
     };
