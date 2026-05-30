@@ -6,6 +6,7 @@ from pymongo import MongoClient
 import os
 import json
 from datetime import datetime, timezone
+from bson import ObjectId
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
@@ -68,18 +69,22 @@ def store_user_log():
     
     return jsonify({"message": "entry added to database"})
 
-@app.route("/api/fetch_user_log")
-def fetch_user_log():
+@app.route("/api/fetch_user_log/<string:id>")
+def fetch_user_log(id):
+    try:
+        entry = db.journal_entries.find_one({"_id": ObjectId(id)})
+    except Exception:
+        return jsonify({"error": "invalid id format"}), 400
 
-    
+    if entry is None:
+        return jsonify({"error": "entry not found"}), 404
 
-    ##return dummy values
-    base_dir = os.path.dirname(os.path.abspath(__file__))  # points to src/
-    file_path = os.path.join(base_dir, '..', 'db', 'example_data', 'journal_entry.example.json')
+    entry["_id"] = str(entry["_id"])
+    entry["event_datetime"] = entry["event_datetime"].isoformat()
+    entry["created_at"] = entry["created_at"].isoformat()
+    entry["updated_at"] = entry["updated_at"].isoformat()
 
-    with open(file_path) as f:
-        data = json.load(f)
-    return jsonify(data)
+    return jsonify(entry)
 
 @app.route("/api/set_user_prefs", methods = ["POST"])
 def set_user_prefs():
