@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from pymongo import MongoClient
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
 app = Flask(__name__)
@@ -144,16 +144,19 @@ def userlogs(number, offset):
     return jsonify({"total": total, "entries": result})
 
 @app.route("/api/calendar/<int:year>/<int:month>")
-def calendar(year, month):
+@app.route("/api/calendar/<int:year>/<int:month>/<int:day>")
+def calendar(year, month, day=None):
 
     start_date = datetime(year, month, 1)
-    
-    if month == 12:
+
+    if day is not None:
+        start_date = datetime(year, month, day)
+        end_date = start_date + timedelta(days=1)
+    elif month == 12:
         end_date = datetime(year + 1, 1, 1)
     else:
         end_date = datetime(year, month + 1, 1)
 
-    # Query MongoDB for entries within the month
     entries = db.journal_entries.find({
         "event_datetime": {
             "$gte": start_date,
@@ -161,7 +164,6 @@ def calendar(year, month):
         }
     })
 
-    # Serialize results (convert ObjectId and datetime to strings)
     result = []
     for entry in entries:
         entry["_id"] = str(entry["_id"])
@@ -178,6 +180,13 @@ def graph_info():
     
 
     return jsonify({"message": "preferences set"})
+
+@app.route("/api/number_entries")
+def graph_info():
+
+    entry_num = db.journal_entries.count_documents({})
+
+    return jsonify({"entries": entry_num})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
