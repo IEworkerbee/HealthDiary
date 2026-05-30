@@ -7,7 +7,7 @@ const Diary = () => {
   const jentry: JournalEntry[] = [
     {
       symptom: "headache",
-      date: "5/28/2026",
+      date: new Date(),
       notes: [
         "So much I love cats and Lorem Ipsum testing cats lorem ipsum testing cats lorem ipusmin tatlja;j fifodjosdijfoisjdfjoiesjfoijsoijfojsoijfsjoifjsoijfoijsfoijes",
       ],
@@ -19,7 +19,7 @@ const Diary = () => {
         { name: "Atomoxetine" },
       ],
     },
-    { symptom: "headache", date: "5/29/2026" },
+    { symptom: "headache", date: new Date(Date.now() + 24 * 60 * 60 * 1000) },
   ];
   return (
     <>

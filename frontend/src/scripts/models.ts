@@ -3,7 +3,7 @@ export interface MedicationLog {
     name: string;
     dosage?: number;
     unit?: string;
-    time_taken?: string;
+    time_taken?: Date;
 }
 
 export interface SymptomRating {
@@ -19,7 +19,7 @@ export interface PreferencesSnapshot {
 
 export interface JournalEntry {
     symptom: string;
-    date: string;
+    date: Date;
     pain_level?: number;
     mood?: number;
     functional_impact?: number;

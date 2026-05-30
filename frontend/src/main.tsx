@@ -18,7 +18,7 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <ErrorPage />,
   },
-  { path: "/calendar", element: <Calendar /> },
+  { path: "/calendar/:year?/:month?", element: <Calendar /> },
   { path: "/settings", element: <Settings /> },
   { path: "/diary", element: <Diary /> },
   { path: "/entry/:entryID", element: <DiaryEntry /> },
