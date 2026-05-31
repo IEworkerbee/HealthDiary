@@ -1,7 +1,7 @@
 """
 
 """
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from pydantic import ValidationError
 
 # Imports db API.py ran from src and not backend.
@@ -17,6 +17,7 @@ from db.repository import (search_journal_entries,
                            get_preferences,  
                            create_journal_entry, update_preferences
 )
+from src.pdf_generator import build_report
 
 
 app = Flask(__name__)
@@ -181,6 +182,43 @@ def number_entries():
     entry_num = db.journal_entries.count_documents({})
 
     return jsonify({"entries": entry_num})
+
+# call should be something like window.open("/api/export_pdf", "_blank");
+# Needs a date range in query params like ?start=2024-01-01&end=2024-01-31 to limit to January 2024, 
+# or omit both to export everything. Dates should be in YYYY-MM-DD format.
+@app.route("/api/export_pdf")
+def export_pdf():
+    start_raw = request.args.get("start")
+    end_raw = request.args.get("end")
+
+    # Expect YYYY-MM-DD; both optional. Omitting both exports everything.
+
+    try:
+        start_date = datetime.fromisoformat(start_raw) if start_raw else None
+        end_date = (
+            datetime.fromisoformat(end_raw) + timedelta(days=1) if end_raw else None
+        )  # +1 day so the end date is inclusive of that whole day
+    except ValueError:
+        return jsonify({"error": "invalid date, expected YYYY-MM-DD"}), 400
+
+    entries = search_journal_entries(start_date=start_date, end_date=end_date)
+    if not entries:
+        return jsonify({"error": "no entries found for the given range"}), 404
+
+    try:
+        pdf_bytes = build_report(
+            title="Health Diary Report",
+            event_entries=entries,
+            condition_entries=entries,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=health_report.pdf"},
+    )
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
