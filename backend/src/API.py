@@ -7,6 +7,8 @@ import os
 import json
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
+import db.repository 
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
@@ -182,7 +184,7 @@ def graph_info():
     return jsonify({"message": "preferences set"})
 
 @app.route("/api/number_entries")
-def graph_info():
+def number_entries():
 
     entry_num = db.journal_entries.count_documents({})
 
