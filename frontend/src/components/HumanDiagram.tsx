@@ -157,7 +157,9 @@ const HumanDiagram = ({
                     ry={val.ry}
                     cx={val.cx}
                     cy={val.cy}
-                    fill="#99d9ea"
+                    fill={
+                      selectedLocations.includes(val.id) ? "#FF0000" : "#99d9ea"
+                    }
                     fillRule="evenodd"
                     stroke="#3f48cc"
                     strokeWidth="3.75053000401065"
