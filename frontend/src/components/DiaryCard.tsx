@@ -1,11 +1,13 @@
 import { Row, Col, Card, Button, Nav, Tab, Table } from "react-bootstrap";
 import type { JournalEntry } from "../scripts/models";
+import { Navigate, useNavigate } from "react-router";
 
 interface Props {
   entry: JournalEntry;
 }
 
 export const DiaryCard = ({ entry }: Props) => {
+  const navigate = useNavigate();
   const logs = Object.entries(entry).reduce((acc, [key, val]) => {
     if (
       [
@@ -27,6 +29,10 @@ export const DiaryCard = ({ entry }: Props) => {
     }
     return acc;
   }, {});
+
+  function editEntry() {
+    navigate(`/editentry/${entry._id}`);
+  }
 
   const medicationHeaders = ["Name", "Dosage", "Unit", "Time"];
   return (
@@ -116,7 +122,9 @@ export const DiaryCard = ({ entry }: Props) => {
                 )}
               </Tab.Pane>
             </Tab.Content>
-            <Button variant="primary">Edit Entry</Button>
+            <Button variant="primary" onClick={editEntry}>
+              Edit Entry
+            </Button>
           </Card.Body>
         </Card>
       </Tab.Container>

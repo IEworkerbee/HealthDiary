@@ -5,7 +5,7 @@ interface HumanDiagramProps {
   onLocationToggle: (index: string) => void;
 }
 
-const HumanDiagram = ({
+export const HumanDiagram = ({
   selectedLocations,
   onLocationToggle,
 }: HumanDiagramProps) => {
@@ -193,5 +193,3 @@ const HumanDiagram = ({
     </Container>
   );
 };
-
-export default HumanDiagram;
