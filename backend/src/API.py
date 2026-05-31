@@ -1,21 +1,36 @@
 """
 
 """
-from flask import Flask, request, jsonify
-from pymongo import MongoClient
+from flask import Flask, request, jsonify, Response
+from pydantic import ValidationError
+
+# Imports db API.py ran from src and not backend.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import os
 import json
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
-import db.repository 
+from db.repository import (search_journal_entries, 
+                           get_preferences,  
+                           create_journal_entry, update_preferences
+)
+from src.pdf_generator import build_report
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
 
-mongo_host = os.environ.get('MONGO_URI', 'db')
-client = MongoClient(mongo_host, 27017)
-db = client.healthdiary
+from db.connection import get_database
+db = get_database()
+try:
+    from db.repository import create_indexes
+    create_indexes()
+except Exception as e:
+    print(f"Error creating indexes: {e}")
+
 
 """
 @app.route("/")
@@ -24,60 +39,50 @@ def home():
     return jsonify({"status": "ok"})
 """
 
-def get_preferences():
-    pass
 
-@app.route("/api/store_user_log", methods = ["POST"])
+
+@app.route("/api/store_user_log", methods=["POST"])
 def store_user_log():
-
-    data = request.get_json()
-
-    date = datetime.strptime(data.get("event_datetime", ""), '%d/%m/%Y %H:%M')
-    main_symptom = data.get("main_symptom", "none")
-    pain_level = int(data.get("pain_level", "-1"))
-    mood = int(data.get("mood", "-1"))
-    functional_impact = data.get("functional_impact", None)
-    notes = data.get("notes", None)
-    current_treatment = data.get("current_treatment", None)
-
-    medications = data.get("medications", [])       # list of dicts
-    for medication in medications:
-        if ("time_taken" in medication): medication.time_taken = datetime.strptime(medication.time_taken, '%d/%m/%Y %H:%M') # Grabbing time from here too  
-    
-    triggers = data.get("triggers", [])             # list of strings
-    tags = data.get("tags", [])
-    body_locations = data.get("body_locations", [])
-    custom_ratings = data.get("custom_ratings", [])
-    preferences_snapshot = get_preferences()
-
-    created_at = datetime.now(timezone.utc)
-
-    final = {
-        "main_symptom": main_symptom,
-        "event_datetime": date,
-        "pain_level": pain_level,
-        "mood": mood,
-        "functional_impact": functional_impact,
-        "medications" : medications,
-        "triggers" : triggers,
-        "notes" : notes,
-        "body_locations" : body_locations, 
-        "current_treatment" : current_treatment,
-        "custom_ratings" : custom_ratings,
-        "tags" : tags,
-        "preferences_snapshot" : preferences_snapshot,
-        "created_at" : created_at,
-        "updated_at" : created_at
+    data = request.get_json(silent=True) or {}
+    payload = {
+        "main_symptom": data.get("main_symptom", "none"),
+        "event_datetime": data.get("event_datetime"),
+        "pain_level": data.get("pain_level"),
+        "mood": data.get("mood"),
+        "functional_impact": data.get("functional_impact"),
+        "medications": data.get("medications", []),
+        "triggers": data.get("triggers", []),
+        "notes": data.get("notes"),
+        "body_locations": data.get("body_locations", []),
+        "current_treatment": data.get("current_treatment"),
+        "custom_ratings": data.get("custom_ratings", []),
+        "tags": data.get("tags", []),
     }
 
-    db.journal_entries.insert_one(final)
-    
-    return jsonify({"message": "entry added to database"})
+    # Frontend sends datetimes as "dd/mm/yyyy HH:MM"; Pydantic only accepts
+    # ISO-8601, so convert here before validation.
+    try:
+        payload["event_datetime"] = datetime.strptime(
+            payload["event_datetime"], "%d/%m/%Y %H:%M"
+        )
+        for med in payload["medications"]:
+            if med.get("time_taken"):
+                med["time_taken"] = datetime.strptime(
+                    med["time_taken"], "%d/%m/%Y %H:%M"
+                )
+    except (ValueError, TypeError):
+        return jsonify({"error": "invalid datetime format, expected dd/mm/yyyy HH:MM"}), 400
+
+    try:
+        saved = create_journal_entry(payload)
+    except (ValueError, ValidationError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"message": "entry added to database", "id": saved["id"]}), 201
 
 @app.route("/api/fetch_user_log/<string:id>")
 def fetch_user_log(id):
     try:
-        entry = db.journal_entries.find_one({"_id": ObjectId(id)})
+        entry = db.journal_entries.find_one({"_id": ObjectId(id), "deleted_at": None})
     except Exception:
         return jsonify({"error": "invalid id format"}), 400
 
@@ -91,27 +96,15 @@ def fetch_user_log(id):
 
     return jsonify(entry)
 
-@app.route("/api/set_user_prefs", methods = ["POST"])
+@app.route("/api/set_user_prefs", methods=["POST"])
 def set_user_prefs():
-
-    body = request.get_json()
-    active_modules = body.get("active_modules", None)
-    module_order = body.get("module_order", None)
-
-    # Load existing prefs so we don't overwrite unrelated fields
-    existing = db.preferences.find_one({"_id": "active"}) or {}
-
-    prefs = {
-        "_id": "active",
-        "active_modules": active_modules if active_modules is not None else existing.get("active_modules", []),
-        "module_order": module_order if module_order is not None else existing.get("module_order", []),
-        "snapshot_version": existing.get("snapshot_version", 1),
-        "updated_at": datetime.now(timezone.utc)
-    }
-
-    db.preferences.replace_one({"_id": "active"}, prefs, upsert=True)
-
-    return jsonify({"message": "preferences set"})
+    body = request.get_json(silent=True) or {}
+    updates = {k: body[k] for k in ("active_modules", "module_order") if body.get(k) is not None}
+    try:
+        saved = update_preferences(updates)
+    except (ValueError, ValidationError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"message": "preferences set", "preferences": saved})
 
 @app.route("/api/get_user_prefs")
 def get_user_prefs():
@@ -128,7 +121,7 @@ def get_user_prefs():
 @app.route("/api/userlogs/<int:number>/<int:offset>")
 def userlogs(number, offset):
     entries = db.journal_entries.find(
-        {},
+        {"deleted_at": None}, #Setting this to none ensures deleted entries aren't returned. 
         sort=[("event_datetime", -1)],
         skip=offset,
         limit=number
@@ -142,7 +135,7 @@ def userlogs(number, offset):
         entry["updated_at"] = entry["updated_at"].isoformat()
         result.append(entry)
 
-    total = db.journal_entries.count_documents({})
+    total = db.journal_entries.count_documents({"deleted_at": None})
     return jsonify({"total": total, "entries": result})
 
 @app.route("/api/calendar/<int:year>/<int:month>")
@@ -181,7 +174,7 @@ def graph_info():
 
     
 
-    return jsonify({"message": "preferences set"})
+    return jsonify({"message": "not implemented yet"})
 
 @app.route("/api/number_entries")
 def number_entries():
@@ -189,6 +182,43 @@ def number_entries():
     entry_num = db.journal_entries.count_documents({})
 
     return jsonify({"entries": entry_num})
+
+# call should be something like window.open("/api/export_pdf", "_blank");
+# Needs a date range in query params like ?start=2024-01-01&end=2024-01-31 to limit to January 2024, 
+# or omit both to export everything. Dates should be in YYYY-MM-DD format.
+@app.route("/api/export_pdf")
+def export_pdf():
+    start_raw = request.args.get("start")
+    end_raw = request.args.get("end")
+
+    # Expect YYYY-MM-DD; both optional. Omitting both exports everything.
+
+    try:
+        start_date = datetime.fromisoformat(start_raw) if start_raw else None
+        end_date = (
+            datetime.fromisoformat(end_raw) + timedelta(days=1) if end_raw else None
+        )  # +1 day so the end date is inclusive of that whole day
+    except ValueError:
+        return jsonify({"error": "invalid date, expected YYYY-MM-DD"}), 400
+
+    entries = search_journal_entries(start_date=start_date, end_date=end_date)
+    if not entries:
+        return jsonify({"error": "no entries found for the given range"}), 404
+
+    try:
+        pdf_bytes = build_report(
+            title="Health Diary Report",
+            event_entries=entries,
+            condition_entries=entries,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=health_report.pdf"},
+    )
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
