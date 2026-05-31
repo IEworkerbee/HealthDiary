@@ -1,11 +1,16 @@
-import { useState } from "react";
 import { Container, Row, Col, Card, Alert } from "react-bootstrap";
 
-const HumanDiagram = () => {
-  const [activeRegion, setActiveRegion] = useState("");
-  const handlePathClick = (event: React.MouseEvent<SVGEllipseElement>) => {
-    const regionName = event.currentTarget.getAttribute("id");
-    regionName && setActiveRegion(regionName);
+interface HumanDiagramProps {
+  selectedLocations: string[];
+  onLocationToggle: (index: string) => void;
+}
+
+const HumanDiagram = ({
+  selectedLocations,
+  onLocationToggle,
+}: HumanDiagramProps) => {
+  const handlePathClick = (index: string) => {
+    onLocationToggle(index);
   };
 
   const ellipseData = [
@@ -158,7 +163,7 @@ const HumanDiagram = () => {
                     strokeWidth="3.75053000401065"
                     strokeLinecap="square"
                     strokeLinejoin="bevel"
-                    onClick={handlePathClick}
+                    onClick={() => handlePathClick(val.id)}
                   />
                 );
               })}
@@ -169,15 +174,15 @@ const HumanDiagram = () => {
         <Col md={4}>
           <Card className="shadow-sm">
             <Card.Body>
-              <Card.Title>Region Information</Card.Title>
-              {activeRegion ? (
+              <Card.Title>Selected Regions</Card.Title>
+              {selectedLocations.length > 0 ? (
                 <Alert variant="success">
-                  You clicked: <strong>{activeRegion}</strong>
+                  {selectedLocations
+                    .map((_, i) => ellipseData[i].id)
+                    .join(", ")}
                 </Alert>
               ) : (
-                <Alert variant="secondary">
-                  Click a section of the map to see details.
-                </Alert>
+                <Alert variant="secondary">Click a region to select it.</Alert>
               )}
             </Card.Body>
           </Card>
