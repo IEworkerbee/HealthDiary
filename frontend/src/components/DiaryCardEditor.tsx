@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Row, Card, Button, Nav, Tab, Table, Form } from "react-bootstrap";
 import { HumanDiagram } from "./HumanDiagram";
-import type { JournalEntry } from "../scripts/models";
+import type { JournalEntry, MedicationLog } from "../scripts/models";
 
 interface Props {
   entry: JournalEntry;
@@ -18,6 +18,17 @@ export const DiaryCardEditor = ({ entry }: Props) => {
   const [triggers, setTriggers] = useState<string[]>([]);
   const [bodyLocations, setBodyLocation] = useState<string[]>([]);
   const [currentTreatment, setCurrentTreatment] = useState<string>("");
+  const [medications, setMedications] = useState<MedicationLog[]>([]);
+
+  const addMedication = () => setMedications([...medications, { name: "" }]);
+
+  const updateMedication = (i: number, fields: Partial<MedicationLog>) =>
+    setMedications(
+      medications.map((m, idx) => (idx === i ? { ...m, ...fields } : m)),
+    );
+
+  const removeMedication = (i: number) =>
+    setMedications(medications.filter((_, idx) => idx !== i));
 
   const handleBodyClick = (location: string) => {
     location &&
@@ -201,34 +212,53 @@ export const DiaryCardEditor = ({ entry }: Props) => {
                 <Tab.Pane eventKey="third">
                   <Card.Title>Medications Taken</Card.Title>
 
-                  {entry.medications && (
-                    <Table striped bordered responsive>
-                      <thead>
-                        <tr>
-                          {medicationHeaders?.map((header, index) => {
-                            return <th key={index}>{String(header)}</th>;
-                          })}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {entry.medications.map((val, index) => {
-                          return (
-                            <tr key={index}>
-                              {medicationHeaders.map((_, index2) => {
-                                return (
-                                  <td key={index2}>
-                                    {Object.values(val)[index2]
-                                      ? String(Object.values(val)[index2])
-                                      : "-"}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  )}
+                  <Form.Label>Medications</Form.Label>
+                  {entry.medications?.map((med, i) => (
+                    <div key={i}>
+                      <Form.Control
+                        placeholder="Name"
+                        value={med.name}
+                        onChange={(e) =>
+                          updateMedication(i, { name: e.target.value })
+                        }
+                      />
+                      <Form.Control
+                        type="number"
+                        placeholder="Dosage"
+                        value={med.dosage ?? ""}
+                        onChange={(e) =>
+                          updateMedication(i, {
+                            dosage: Number(e.target.value),
+                          })
+                        }
+                      />
+                      <Form.Control
+                        placeholder="Unit (mg, ml…)"
+                        value={med.unit ?? ""}
+                        onChange={(e) =>
+                          updateMedication(i, { unit: e.target.value })
+                        }
+                      />
+                      <Form.Control
+                        type="datetime-local"
+                        value={med.time_taken?.toISOString().slice(0, 16) ?? ""}
+                        onChange={(e) =>
+                          updateMedication(i, {
+                            time_taken: new Date(e.target.value),
+                          })
+                        }
+                      />
+                      <Button
+                        variant="danger"
+                        onClick={() => removeMedication(i)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="secondary" onClick={addMedication}>
+                    + Add Medication
+                  </Button>
                 </Tab.Pane>
               </Tab.Content>
               <Button variant="primary">Edit Entry</Button>
