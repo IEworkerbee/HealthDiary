@@ -11,7 +11,6 @@ import type {
   JournalEvent,
   JournalEntry,
   JournalEntryPackaged,
-  MedicationLog,
 } from "../scripts/models";
 import { unpackageJournalEntry } from "../scripts/helperfuncs";
 import { CalendarToolBar } from "./CalendarToolBar";

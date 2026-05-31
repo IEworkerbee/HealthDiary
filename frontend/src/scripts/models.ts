@@ -30,7 +30,7 @@ export interface JournalEntryPackaged {
     event_datetime: string;
     pain_level?: number;
     mood?: number;
-    functional_impact?: number;
+    functional_impact?: string;
     medications?: MedicationLogPackaged[]
     triggers?: string[]
     notes?: string;
@@ -47,7 +47,7 @@ export interface JournalEntry {
     event_datetime: Date;
     pain_level?: number;
     mood?: number;
-    functional_impact?: number;
+    functional_impact?: string;
     medications?: MedicationLog[]
     triggers?: string[]
     notes?: string;

@@ -16,7 +16,8 @@ export const DiaryCard = ({ entry }: Props) => {
         "body_location",
         "current_treatment",
       ].includes(key) &&
-      val
+      val &&
+      val.length !== 0
     ) {
       const cleanedKey = key
         .split("_")
@@ -70,10 +71,10 @@ export const DiaryCard = ({ entry }: Props) => {
                 {Object.entries(logs).map(([key, val], index) => {
                   return (
                     <Row className="mb-2" key={index}>
-                      <Col sm={2}>
+                      <Col sm={3}>
                         <strong>{key}</strong>
                       </Col>
-                      <Col sm={10}>
+                      <Col sm={9}>
                         {typeof val === "object"
                           ? JSON.stringify(val)
                           : String(val)}

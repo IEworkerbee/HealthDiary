@@ -2,6 +2,7 @@ import { Container, Pagination } from "react-bootstrap";
 import { useEffect, useState } from "react";
 import { NavSideBar } from "../components/NavSideBar";
 import { DiaryCard } from "../components/DiaryCard";
+
 import type {
   JournalEntry,
   JournalEntryPackaged,
@@ -11,7 +12,7 @@ import type {
 const Diary = () => {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageNumbers = [1, 2, 3];
+  const [pageNumbers, setPageNumbers] = useState<number[]>([]);
 
   useEffect(() => {
     const getDiaryEntries = async () => {
@@ -36,6 +37,23 @@ const Diary = () => {
       setJournalEntries(unpackedData);
     };
     getDiaryEntries();
+  }, []);
+
+  useEffect(() => {
+    const getNumEntries = async () => {
+      const response = await fetch("/api/number_entries");
+      const data = await response.json();
+      const newPageNumbers: number[] = [];
+      for (
+        let i = 1;
+        i <= Math.max(Math.trunc(parseInt(data.entries) / 7), 1);
+        i++
+      ) {
+        newPageNumbers.push(i);
+      }
+      setPageNumbers(newPageNumbers);
+    };
+    getNumEntries();
   }, []);
 
   return (
