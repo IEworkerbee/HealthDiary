@@ -11,7 +11,7 @@ const TempJournalEntryInserter = () => {
         "So much I love cats and Lorem Ipsum testing cats lorem ipsum testing cats lorem ipusmin tatlja;j fifodjosdijfoisjdfjoiesjfoijsoijfojsoijfsjoifjsoijfoijsfoijes",
       pain_level: 5,
       mood: 2,
-      functional_impact: 3,
+      functional_impact: 'mild',
       medications: [
         { name: "Sertraline", dosage: 100, unit: "mg" },
         { name: "Atomoxetine" },

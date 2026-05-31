@@ -2,20 +2,34 @@
 
 """
 from flask import Flask, request, jsonify
-from pymongo import MongoClient
+from pydantic import ValidationError
+
+# Imports db API.py ran from src and not backend.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import os
 import json
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
-import db.repository 
+from db.repository import (search_journal_entries, 
+                           get_preferences,  
+                           create_journal_entry, update_preferences
+)
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev'
 
-mongo_host = os.environ.get('MONGO_URI', 'db')
-client = MongoClient(mongo_host, 27017)
-db = client.healthdiary
+from db.connection import get_database
+db = get_database()
+try:
+    from db.repository import create_indexes
+    create_indexes()
+except Exception as e:
+    print(f"Error creating indexes: {e}")
+
 
 """
 @app.route("/")
@@ -24,60 +38,50 @@ def home():
     return jsonify({"status": "ok"})
 """
 
-def get_preferences():
-    pass
 
-@app.route("/api/store_user_log", methods = ["POST"])
+
+@app.route("/api/store_user_log", methods=["POST"])
 def store_user_log():
-
-    data = request.get_json()
-
-    date = datetime.strptime(data.get("event_datetime", ""), '%d/%m/%Y %H:%M')
-    main_symptom = data.get("main_symptom", "none")
-    pain_level = int(data.get("pain_level", "-1"))
-    mood = int(data.get("mood", "-1"))
-    functional_impact = data.get("functional_impact", None)
-    notes = data.get("notes", None)
-    current_treatment = data.get("current_treatment", None)
-
-    medications = data.get("medications", [])       # list of dicts
-    for medication in medications:
-        if ("time_taken" in medication): medication.time_taken = datetime.strptime(medication.time_taken, '%d/%m/%Y %H:%M') # Grabbing time from here too  
-    
-    triggers = data.get("triggers", [])             # list of strings
-    tags = data.get("tags", [])
-    body_locations = data.get("body_locations", [])
-    custom_ratings = data.get("custom_ratings", [])
-    preferences_snapshot = get_preferences()
-
-    created_at = datetime.now(timezone.utc)
-
-    final = {
-        "main_symptom": main_symptom,
-        "event_datetime": date,
-        "pain_level": pain_level,
-        "mood": mood,
-        "functional_impact": functional_impact,
-        "medications" : medications,
-        "triggers" : triggers,
-        "notes" : notes,
-        "body_locations" : body_locations, 
-        "current_treatment" : current_treatment,
-        "custom_ratings" : custom_ratings,
-        "tags" : tags,
-        "preferences_snapshot" : preferences_snapshot,
-        "created_at" : created_at,
-        "updated_at" : created_at
+    data = request.get_json(silent=True) or {}
+    payload = {
+        "main_symptom": data.get("main_symptom", "none"),
+        "event_datetime": data.get("event_datetime"),
+        "pain_level": data.get("pain_level"),
+        "mood": data.get("mood"),
+        "functional_impact": data.get("functional_impact"),
+        "medications": data.get("medications", []),
+        "triggers": data.get("triggers", []),
+        "notes": data.get("notes"),
+        "body_locations": data.get("body_locations", []),
+        "current_treatment": data.get("current_treatment"),
+        "custom_ratings": data.get("custom_ratings", []),
+        "tags": data.get("tags", []),
     }
 
-    db.journal_entries.insert_one(final)
-    
-    return jsonify({"message": "entry added to database"})
+    # Frontend sends datetimes as "dd/mm/yyyy HH:MM"; Pydantic only accepts
+    # ISO-8601, so convert here before validation.
+    try:
+        payload["event_datetime"] = datetime.strptime(
+            payload["event_datetime"], "%d/%m/%Y %H:%M"
+        )
+        for med in payload["medications"]:
+            if med.get("time_taken"):
+                med["time_taken"] = datetime.strptime(
+                    med["time_taken"], "%d/%m/%Y %H:%M"
+                )
+    except (ValueError, TypeError):
+        return jsonify({"error": "invalid datetime format, expected dd/mm/yyyy HH:MM"}), 400
+
+    try:
+        saved = create_journal_entry(payload)
+    except (ValueError, ValidationError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"message": "entry added to database", "id": saved["id"]}), 201
 
 @app.route("/api/fetch_user_log/<string:id>")
 def fetch_user_log(id):
     try:
-        entry = db.journal_entries.find_one({"_id": ObjectId(id)})
+        entry = db.journal_entries.find_one({"_id": ObjectId(id), "deleted_at": None})
     except Exception:
         return jsonify({"error": "invalid id format"}), 400
 
@@ -91,27 +95,15 @@ def fetch_user_log(id):
 
     return jsonify(entry)
 
-@app.route("/api/set_user_prefs", methods = ["POST"])
+@app.route("/api/set_user_prefs", methods=["POST"])
 def set_user_prefs():
-
-    body = request.get_json()
-    active_modules = body.get("active_modules", None)
-    module_order = body.get("module_order", None)
-
-    # Load existing prefs so we don't overwrite unrelated fields
-    existing = db.preferences.find_one({"_id": "active"}) or {}
-
-    prefs = {
-        "_id": "active",
-        "active_modules": active_modules if active_modules is not None else existing.get("active_modules", []),
-        "module_order": module_order if module_order is not None else existing.get("module_order", []),
-        "snapshot_version": existing.get("snapshot_version", 1),
-        "updated_at": datetime.now(timezone.utc)
-    }
-
-    db.preferences.replace_one({"_id": "active"}, prefs, upsert=True)
-
-    return jsonify({"message": "preferences set"})
+    body = request.get_json(silent=True) or {}
+    updates = {k: body[k] for k in ("active_modules", "module_order") if body.get(k) is not None}
+    try:
+        saved = update_preferences(updates)
+    except (ValueError, ValidationError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"message": "preferences set", "preferences": saved})
 
 @app.route("/api/get_user_prefs")
 def get_user_prefs():
@@ -128,7 +120,7 @@ def get_user_prefs():
 @app.route("/api/userlogs/<int:number>/<int:offset>")
 def userlogs(number, offset):
     entries = db.journal_entries.find(
-        {},
+        {"deleted_at": None}, #Setting this to none ensures deleted entries aren't returned. 
         sort=[("event_datetime", -1)],
         skip=offset,
         limit=number
@@ -142,7 +134,7 @@ def userlogs(number, offset):
         entry["updated_at"] = entry["updated_at"].isoformat()
         result.append(entry)
 
-    total = db.journal_entries.count_documents({})
+    total = db.journal_entries.count_documents({"deleted_at": None})
     return jsonify({"total": total, "entries": result})
 
 @app.route("/api/calendar/<int:year>/<int:month>")
@@ -181,7 +173,7 @@ def graph_info():
 
     
 
-    return jsonify({"message": "preferences set"})
+    return jsonify({"message": "not implemented yet"})
 
 @app.route("/api/number_entries")
 def number_entries():
