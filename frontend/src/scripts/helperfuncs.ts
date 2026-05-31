@@ -1,4 +1,4 @@
-import type {JournalEntryPackaged, JournalEntry, MedicationLog} from "./models.ts"
+import type {JournalEntryPackaged, JournalEntry, MedicationLog, MedicationLogPackaged} from "./models.ts"
 
 export function formatToPythonString(date: Date): string {
   const pad = (num: number) => String(num).padStart(2, '0');
@@ -28,4 +28,23 @@ export function unpackageJournalEntry(entry: JournalEntryPackaged) {
     }),}
 
   return unpackagedJournalEntry;
+}
+
+export function packageJournalEntry(entry: JournalEntry) {
+  const packagedJournalEntry: JournalEntryPackaged = {
+    ... entry,
+    event_datetime: formatToPythonString(entry.event_datetime),
+    medications: entry.medications?.map((med) => {
+      if (med.time_taken) {
+        return {
+          ... med,
+          time_taken: formatToPythonString(med.time_taken),
+        } as MedicationLogPackaged
+      } else {
+        return med as MedicationLogPackaged
+      }
+    }),
+  }
+  
+  return packagedJournalEntry;
 }

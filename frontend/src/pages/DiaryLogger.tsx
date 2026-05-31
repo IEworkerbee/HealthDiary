@@ -1,5 +1,5 @@
 import { useState } from "react";
-import HumanDiagram from "../components/HumanDiagram";
+import { HumanDiagram } from "../components/HumanDiagram";
 import { NavSideBar } from "../components/NavSideBar";
 import { DiaryEntry } from "../components/DiaryEntry";
 import { Button } from "react-bootstrap";
