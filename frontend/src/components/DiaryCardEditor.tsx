@@ -54,7 +54,10 @@ export const DiaryCardEditor = ({ entry }: Props) => {
 
   const getFormType = (key: string, val: any) => {
     if (typeof val == "string") {
-      if (key === "Functional Impact") {
+      if (
+        key === "Functional Impact" &&
+        entry.preferences_snapshot?.active_modules.includes("functional_impact")
+      ) {
         return (
           <>
             <Form.Select
@@ -70,19 +73,25 @@ export const DiaryCardEditor = ({ entry }: Props) => {
           </>
         );
       }
-      if (key === "Triggers") {
+      if (
+        key === "Triggers" &&
+        entry.preferences_snapshot?.active_modules.includes("triggers")
+      ) {
         return (
           <>
             <Form.Control
               as="text"
-              placeholder={triggers.join(", ")}
+              value={triggers.join(", ")}
               onChange={(e) => {
                 setTriggers(e.target.value.split(", "));
               }}
             />
           </>
         );
-      } else if (key === "Body Location") {
+      } else if (
+        key === "Body Location" &&
+        entry.preferences_snapshot?.active_modules.includes("body_location")
+      ) {
         return (
           <>
             <HumanDiagram
@@ -91,12 +100,15 @@ export const DiaryCardEditor = ({ entry }: Props) => {
             />
           </>
         );
-      } else if (key === "Current Treatment") {
+      } else if (
+        key === "Current Treatment" &&
+        entry.preferences_snapshot?.active_modules.includes("current_treatment")
+      ) {
         return (
           <>
             <Form.Control
               as="text"
-              placeholder={currentTreatment}
+              value={currentTreatment}
               onChange={(e) => {
                 setCurrentTreatment(e.target.value);
               }}
@@ -105,7 +117,12 @@ export const DiaryCardEditor = ({ entry }: Props) => {
         );
       }
     } else if (typeof val == "number") {
-      if (key === "Pain Level" || "Mood") {
+      if (
+        (key === "Pain Level" || "Mood") &&
+        entry.preferences_snapshot?.active_modules.includes(
+          key.toLowerCase().replaceAll(" ", "_"),
+        )
+      ) {
         return (
           <>
             <Form.Control
