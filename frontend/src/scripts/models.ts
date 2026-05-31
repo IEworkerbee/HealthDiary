@@ -30,7 +30,7 @@ export interface JournalEntryPackaged {
     event_datetime: string;
     pain_level?: number;
     mood?: number;
-    functional_impact?: string;
+    functional_impact?: string; // Changed to string, 'mild', 'moderate', 'severe' or empty string for no impact
     medications?: MedicationLogPackaged[]
     triggers?: string[]
     notes?: string;
