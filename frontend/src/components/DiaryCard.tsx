@@ -1,6 +1,6 @@
 import { Row, Col, Card, Button, Nav, Tab, Table } from "react-bootstrap";
 import type { JournalEntry } from "../scripts/models";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 interface Props {
   entry: JournalEntry;
@@ -15,7 +15,7 @@ export const DiaryCard = ({ entry }: Props) => {
         "mood",
         "functional_impact",
         "triggers",
-        "body_location",
+        "body_locations",
         "current_treatment",
       ].includes(key) &&
       val &&
