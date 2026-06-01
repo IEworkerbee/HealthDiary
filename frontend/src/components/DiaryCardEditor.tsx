@@ -9,6 +9,7 @@ import {
   Stack,
   Container,
   Col,
+  Badge,
 } from "react-bootstrap";
 import { HumanDiagram } from "./HumanDiagram";
 import type {
@@ -21,7 +22,6 @@ import { useNavigate } from "react-router";
 
 interface Props {
   entry: JournalEntry;
-  isNew: boolean;
 }
 
 interface Val {
@@ -37,7 +37,7 @@ interface Logs {
   current_treatment?: string;
 }
 
-export const DiaryCardEditor = ({ entry, isNew }: Props) => {
+export const DiaryCardEditor = ({ entry }: Props) => {
   const [symptom, setSymptom] = useState<string | undefined>(
     entry.main_symptom,
   );
@@ -127,8 +127,7 @@ export const DiaryCardEditor = ({ entry, isNew }: Props) => {
         "body_locations",
         "current_treatment",
       ].includes(key) &&
-      ((val && val.length !== 0) ||
-        (isNew && entry.preferences_snapshot?.active_modules.includes(key)))
+      entry.preferences_snapshot?.active_modules.includes(key)
     ) {
       return { ...acc, [key]: val as Val };
     }
@@ -197,19 +196,30 @@ export const DiaryCardEditor = ({ entry, isNew }: Props) => {
     } else if (typeof val == "number") {
       if (key === "Pain Level" || "Mood") {
         return (
-          <>
-            <Form.Range
-              step={1}
-              min={1}
-              max={10}
-              value={key === "Pain Level" ? painLevel : mood}
-              onChange={(e) => {
-                key === "Pain Level"
-                  ? setPainLevel(parseInt(e.target.value))
-                  : setMood(parseInt(e.target.value));
-              }}
-            />
-          </>
+          <div className="text-center">
+            <Badge bg="primary" className="p-2 fs-6">
+              {key === "Pain Level" ? painLevel : mood}
+            </Badge>
+            <div className="d-flex align-items-center">
+              <span className="me-2 text-muted">
+                {key === "Pain Level" ? "Low" : "Bad"}
+              </span>
+              <Form.Range
+                step={1}
+                min={1}
+                max={10}
+                value={key === "Pain Level" ? painLevel : mood}
+                onChange={(e) => {
+                  key === "Pain Level"
+                    ? setPainLevel(parseInt(e.target.value))
+                    : setMood(parseInt(e.target.value));
+                }}
+              />
+              <span className="ms-2 text-muted">
+                {key === "Pain Level" ? "High" : "Good"}
+              </span>
+            </div>
+          </div>
         );
       }
     } else {
@@ -260,9 +270,7 @@ export const DiaryCardEditor = ({ entry, isNew }: Props) => {
                       }}
                     />
                   </Card.Title>
-                  {entry.preferences_snapshot?.active_modules.includes(
-                    "notes",
-                  ) && (
+                  {
                     <>
                       <Form.Label>Journal Notes</Form.Label>
                       <Form.Control
@@ -276,7 +284,7 @@ export const DiaryCardEditor = ({ entry, isNew }: Props) => {
                         maxLength={5000}
                       />
                     </>
-                  )}
+                  }
                 </Tab.Pane>
                 <Tab.Pane eventKey="second">
                   <Card.Title>Pain Log</Card.Title>
@@ -375,9 +383,11 @@ export const DiaryCardEditor = ({ entry, isNew }: Props) => {
                   </Container>
                 </Tab.Pane>
               </Tab.Content>
-              <Button onClick={onSubmit} variant="primary">
-                Save Entry
-              </Button>
+              <div className="text-center">
+                <Button onClick={onSubmit} variant="primary">
+                  Save Entry
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Tab.Container>

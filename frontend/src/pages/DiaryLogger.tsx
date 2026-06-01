@@ -24,7 +24,6 @@ function DiaryLogger() {
         "functional_impact",
         "body_locations",
         "medications",
-        "notes",
         "current_treatment",
         "custom_ratings",
       ],
@@ -37,7 +36,7 @@ function DiaryLogger() {
     <>
       <NavSideBar />
       <Container>
-        <DiaryCardEditor entry={entry} isNew={true} />
+        <DiaryCardEditor entry={entry} />
       </Container>
     </>
   );
