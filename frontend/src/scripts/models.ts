@@ -58,6 +58,22 @@ export interface JournalEntry {
   preferences_snapshot?: PreferencesSnapshot;
 }
 
+export const AVAILABLE_MODULES = [
+  //for settings; these coincide with the optional fields in journalentry
+  { key: "pain_level", label: "Pain Level" },
+  { key: "mood", label: "Mood" },
+  { key: "functional_impact", label: "Functional Impact" },
+  { key: "medications", label: "Medications" },
+  { key: "triggers", label: "Triggers" },
+  { key: "notes", label: "Notes" },
+  { key: "body_locations", label: "Body Locations" },
+  { key: "current_treatment", label: "Current Treatment" },
+  { key: "custom_ratings", label: "Symptom Ratings" },
+  { key: "tags", label: "Tags" },
+] as const;
+
+export type ModuleKey = (typeof AVAILABLE_MODULES)[number]["key"]; //key to show which fields are active or not
+
 // For Calendar stuff
 export interface JournalEvent {
   title: string;
