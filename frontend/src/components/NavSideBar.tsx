@@ -31,18 +31,8 @@ export function NavSideBar() {
                 <Nav.Link href="/">Home</Nav.Link>
                 <Nav.Link href="/calendar">Calendar</Nav.Link>
                 <Nav.Link href="/diary">Diary</Nav.Link>
-                <Nav.Link href="/logentry">Log Entry</Nav.Link>
                 <Nav.Link href="/settings">Settings</Nav.Link>
               </Nav>
-              <Form className="d-flex">
-                <Form.Control
-                  type="search"
-                  placeholder="Search"
-                  className="me-2"
-                  aria-label="Search"
-                />
-                <Button variant="outline-primary">Search</Button>
-              </Form>
             </Offcanvas.Body>
           </Navbar.Offcanvas>
         </Container>

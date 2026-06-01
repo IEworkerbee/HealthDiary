@@ -11,8 +11,6 @@ import DiaryLogger from "./pages/DiaryLogger.tsx";
 import DiaryEntryEditor from "./pages/DiaryEntryEditor.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 
-import TempJournalEntryInserter from "./pages/TempJournalEntryInserter.tsx";
-
 import "bootstrap/dist/css/bootstrap.css";
 import "./styles/global.css";
 
@@ -27,7 +25,6 @@ const router = createBrowserRouter([
   { path: "/diary", element: <Diary /> },
   { path: "/logentry", element: <DiaryLogger /> },
   { path: "/entry/:entryID", element: <DiaryEntry /> },
-  { path: "/test", element: <TempJournalEntryInserter /> },
   { path: "/editentry/:entryID", element: <DiaryEntryEditor /> },
 ]);
 

@@ -1,40 +1,44 @@
-import { useState } from "react";
-import { HumanDiagram } from "../components/HumanDiagram";
 import { NavSideBar } from "../components/NavSideBar";
-import { DiaryEntry } from "../components/DiaryEntry";
-import { Button } from "react-bootstrap";
+import { DiaryCardEditor } from "../components/DiaryCardEditor";
 import type { JournalEntry } from "../scripts/models";
+import { Container } from "react-bootstrap";
 
 function DiaryLogger() {
-  const [entry, setEntry] = useState<JournalEntry>({
+  const entry: JournalEntry = {
     main_symptom: "",
     event_datetime: new Date(),
-  });
-
-  const handleLocationToggle = (bodyLocation: string) => {
-    setEntry((prev) => {
-      const current = prev.body_locations ?? [];
-      const updated = current.includes(bodyLocation)
-        ? current.filter((l) => l !== bodyLocation)
-        : [...current, bodyLocation];
-      return { ...prev, body_locations: updated };
-    });
-  };
-
-  const handleSubmit = () => {
-    console.log("Submitting entry:", entry);
-    // TODO: CONNECT TO BACKEND
+    pain_level: 1,
+    mood: 1,
+    functional_impact: "none",
+    medications: [],
+    triggers: [],
+    notes: "",
+    body_locations: [],
+    current_treatment: "",
+    preferences_snapshot: {
+      // TODO: This needs to be hooked up to settings or something
+      active_modules: [
+        "pain_level",
+        "mood",
+        "triggers",
+        "functional_impact",
+        "body_locations",
+        "medications",
+        "notes",
+        "current_treatment",
+        "custom_ratings",
+      ],
+      module_order: [],
+      snapshot_version: 0,
+    },
   };
 
   return (
     <>
       <NavSideBar />
-      <HumanDiagram
-        selectedLocations={entry.body_locations ?? []}
-        onLocationToggle={handleLocationToggle}
-      />
-      <DiaryEntry entry={entry} onChange={setEntry} />
-      <Button onClick={handleSubmit}>Submit</Button>
+      <Container>
+        <DiaryCardEditor entry={entry} isNew={true} />
+      </Container>
     </>
   );
 }

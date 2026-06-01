@@ -24,7 +24,7 @@ const DiaryEntryEditor = () => {
 
   return (
     <Container>
-      {entry && <DiaryCardEditor entry={entry} />}
+      {entry && <DiaryCardEditor entry={entry} isNew={false} />}
       {!entry && <Alert>Something went wrong</Alert>}
       <Button href={`/diary`}>Back to Diary</Button>
     </Container>

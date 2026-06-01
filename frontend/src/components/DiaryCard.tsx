@@ -81,9 +81,7 @@ export const DiaryCard = ({ entry }: Props) => {
                         <strong>{key}</strong>
                       </Col>
                       <Col sm={9}>
-                        {typeof val === "object"
-                          ? JSON.stringify(val)
-                          : String(val)}
+                        {Array.isArray(val) ? val.join(", ") : String(val)}
                       </Col>
                     </Row>
                   );

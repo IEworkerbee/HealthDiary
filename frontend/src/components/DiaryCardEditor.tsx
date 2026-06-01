@@ -1,74 +1,147 @@
 import { useState } from "react";
-import { Row, Card, Button, Nav, Tab, Table, Form } from "react-bootstrap";
+import {
+  Row,
+  Card,
+  Button,
+  Nav,
+  Tab,
+  Form,
+  Stack,
+  Container,
+  Col,
+} from "react-bootstrap";
 import { HumanDiagram } from "./HumanDiagram";
-import type { JournalEntry, MedicationLog } from "../scripts/models";
+import type {
+  JournalEntry,
+  JournalEntryPackaged,
+  MedicationLog,
+} from "../scripts/models";
+import { packageJournalEntry } from "../scripts/helperfuncs";
+import { useNavigate } from "react-router";
 
 interface Props {
   entry: JournalEntry;
+  isNew: boolean;
 }
 
 interface Val {
-  val: string | number;
+  val: string | number | string[];
 }
 
-export const DiaryCardEditor = ({ entry }: Props) => {
-  const [painLevel, setPainLevel] = useState<number>(1);
-  const [mood, setMood] = useState<number>(1);
-  const [functionalImpact, setFunctionalImpact] = useState<string>("");
-  const [triggers, setTriggers] = useState<string[]>([]);
-  const [bodyLocations, setBodyLocation] = useState<string[]>([]);
-  const [currentTreatment, setCurrentTreatment] = useState<string>("");
-  const [medications, setMedications] = useState<MedicationLog[]>([]);
+interface Logs {
+  pain_level?: number;
+  mood?: number;
+  functional_impact?: string;
+  triggers?: string[];
+  body_locations?: string[];
+  current_treatment?: string;
+}
 
-  const addMedication = () => setMedications([...medications, { name: "" }]);
+export const DiaryCardEditor = ({ entry, isNew }: Props) => {
+  const [symptom, setSymptom] = useState<string | undefined>(
+    entry.main_symptom,
+  );
+  const [notes, setNotes] = useState<string | undefined>(entry.notes);
+  const [painLevel, setPainLevel] = useState<number | undefined>(
+    entry.pain_level,
+  );
+  const [mood, setMood] = useState<number | undefined>(entry.mood);
+  const [functionalImpact, setFunctionalImpact] = useState<string | undefined>(
+    entry.functional_impact,
+  );
+  const [triggers, setTriggers] = useState<string[] | undefined>(
+    entry.triggers,
+  );
+  const [bodyLocations, setBodyLocation] = useState<string[] | undefined>(
+    entry.body_locations,
+  );
+  const [currentTreatment, setCurrentTreatment] = useState<string | undefined>(
+    entry.current_treatment,
+  );
+  const [medications, setMedications] = useState<MedicationLog[] | undefined>(
+    entry.medications,
+  );
+
+  const navigate = useNavigate();
+
+  const onSubmit = async () => {
+    const newEntry: JournalEntry = {
+      ...entry,
+      ...(symptom && { main_symptom: symptom }),
+      ...(notes && { notes: notes }),
+      ...(painLevel && { pain_level: painLevel }),
+      ...(mood && { mood: mood }),
+      ...(functionalImpact && { functional_impact: functionalImpact }),
+      ...(triggers && { triggers: triggers }),
+      ...(bodyLocations && { body_locations: bodyLocations }),
+      ...(currentTreatment && { current_treatment: currentTreatment }),
+      ...(medications && { medications: medications }),
+    };
+    const packagedJournalEntry: JournalEntryPackaged =
+      packageJournalEntry(newEntry);
+    const response = await fetch("/api/store_user_log", {
+      method: "POST",
+      body: JSON.stringify(packagedJournalEntry),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+    console.log(data);
+    navigate(`/entry/${data.id}`);
+  };
+
+  const addMedication = () =>
+    medications
+      ? setMedications([...medications, { name: "" }])
+      : setMedications([{ name: "" }]);
 
   const updateMedication = (i: number, fields: Partial<MedicationLog>) =>
     setMedications(
-      medications.map((m, idx) => (idx === i ? { ...m, ...fields } : m)),
+      medications?.map((m, idx) => (idx === i ? { ...m, ...fields } : m)),
     );
 
-  const removeMedication = (i: number) =>
-    setMedications(medications.filter((_, idx) => idx !== i));
-
-  const handleBodyClick = (location: string) => {
-    location &&
-      setBodyLocation((prev) => {
-        const current = prev ?? [];
-        const updated = current.includes(location)
-          ? current.filter((l) => l !== location)
-          : [...current, location];
-        return updated;
-      });
+  const removeMedication = (i: number) => {
+    console.log(i, medications);
+    setMedications(medications?.filter((_, idx) => idx !== i));
   };
 
-  const logs = Object.entries(entry).reduce((acc, [key, val]) => {
+  const handleBodyClick = (location: string) => {
+    setBodyLocation((prev) => {
+      const current = prev ?? [];
+      const updated = current.includes(location)
+        ? current.filter((l) => l !== location)
+        : [...current, location];
+      return updated;
+    });
+  };
+
+  let logs: Logs = Object.entries(entry).reduce((acc, [key, val]) => {
     if (
       [
         "pain_level",
         "mood",
         "functional_impact",
         "triggers",
-        "body_location",
+        "body_locations",
         "current_treatment",
       ].includes(key) &&
-      val &&
-      val.length !== 0
+      ((val && val.length !== 0) ||
+        (isNew && entry.preferences_snapshot?.active_modules.includes(key)))
     ) {
-      const cleanedKey = key
-        .split("_")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-      return { ...acc, [cleanedKey]: val as Val };
+      return { ...acc, [key]: val as Val };
     }
     return acc;
   }, {});
+  if (logs.body_locations) {
+    const { body_locations, ...rest } = logs;
+    logs = { ...rest, body_locations };
+  }
 
   const getFormType = (key: string, val: any) => {
-    if (typeof val == "string") {
-      if (
-        key === "Functional Impact" &&
-        entry.preferences_snapshot?.active_modules.includes("functional_impact")
-      ) {
+    if (typeof val == "string" || typeof val === "object") {
+      if (key === "Functional Impact") {
         return (
           <>
             <Form.Select
@@ -83,42 +156,36 @@ export const DiaryCardEditor = ({ entry }: Props) => {
             </Form.Select>
           </>
         );
-      }
-      if (
-        key === "Triggers" &&
-        entry.preferences_snapshot?.active_modules.includes("triggers")
-      ) {
+      } else if (key === "Triggers") {
         return (
           <>
             <Form.Control
-              as="text"
-              value={triggers.join(", ")}
+              type="text"
+              value={
+                triggers && triggers.length !== 0
+                  ? triggers.join(", ")
+                  : triggers
+              }
               onChange={(e) => {
                 setTriggers(e.target.value.split(", "));
               }}
             />
           </>
         );
-      } else if (
-        key === "Body Location" &&
-        entry.preferences_snapshot?.active_modules.includes("body_location")
-      ) {
+      } else if (key === "Body Locations") {
         return (
           <>
             <HumanDiagram
               onLocationToggle={handleBodyClick}
-              selectedLocations={bodyLocations}
+              selectedLocations={bodyLocations ?? []}
             />
           </>
         );
-      } else if (
-        key === "Current Treatment" &&
-        entry.preferences_snapshot?.active_modules.includes("current_treatment")
-      ) {
+      } else if (key === "Current Treatment") {
         return (
           <>
             <Form.Control
-              as="text"
+              type="text"
               value={currentTreatment}
               onChange={(e) => {
                 setCurrentTreatment(e.target.value);
@@ -128,16 +195,11 @@ export const DiaryCardEditor = ({ entry }: Props) => {
         );
       }
     } else if (typeof val == "number") {
-      if (
-        (key === "Pain Level" || "Mood") &&
-        entry.preferences_snapshot?.active_modules.includes(
-          key.toLowerCase().replaceAll(" ", "_"),
-        )
-      ) {
+      if (key === "Pain Level" || "Mood") {
         return (
           <>
-            <Form.Control
-              type="number"
+            <Form.Range
+              step={1}
               min={1}
               max={10}
               value={key === "Pain Level" ? painLevel : mood}
@@ -155,7 +217,6 @@ export const DiaryCardEditor = ({ entry }: Props) => {
     }
   };
 
-  const medicationHeaders = ["Name", "Dosage", "Unit", "Time"];
   return (
     <>
       <Form.Group className="mb-3" controlId="formControl">
@@ -169,7 +230,16 @@ export const DiaryCardEditor = ({ entry }: Props) => {
                 <Nav.Link eventKey="second">Logs</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey="third">Medications</Nav.Link>
+                <Nav.Link
+                  eventKey="third"
+                  disabled={
+                    !entry.preferences_snapshot?.active_modules.includes(
+                      "medications",
+                    )
+                  }
+                >
+                  Medications
+                </Nav.Link>
               </Nav.Item>
             </Nav>
             <Card.Header as="h5">
@@ -179,89 +249,135 @@ export const DiaryCardEditor = ({ entry }: Props) => {
               <Tab.Content>
                 <Tab.Pane eventKey="first">
                   <Card.Title>
-                    {entry.main_symptom}
                     <Form.Label>
                       Title (Symptom or Summary i.e "Headache" or "Meds")
                     </Form.Label>
                     <Form.Control
-                      as="text"
-                      placeholder={entry.main_symptom ?? "title"}
+                      type="text"
+                      value={symptom}
+                      onChange={(e) => {
+                        setSymptom(e.target.value);
+                      }}
                     />
                   </Card.Title>
-                  <Form.Label>Journal Notes</Form.Label>
-                  <Form.Control
-                    className="mb-2"
-                    as="textarea"
-                    rows={5}
-                    placeholder={entry.notes ?? "No recorded entry."}
-                    maxLength={5000}
-                  />
+                  {entry.preferences_snapshot?.active_modules.includes(
+                    "notes",
+                  ) && (
+                    <>
+                      <Form.Label>Journal Notes</Form.Label>
+                      <Form.Control
+                        className="mb-2"
+                        as="textarea"
+                        rows={5}
+                        value={notes}
+                        onChange={(e) => {
+                          setNotes(e.target.value);
+                        }}
+                        maxLength={5000}
+                      />
+                    </>
+                  )}
                 </Tab.Pane>
                 <Tab.Pane eventKey="second">
                   <Card.Title>Pain Log</Card.Title>
 
                   {Object.entries(logs).map(([key, val], index) => {
-                    return (
-                      <Row className="mb-2" key={index}>
-                        <Form.Label>{key}</Form.Label>
-                        {getFormType(key, val)}
-                      </Row>
-                    );
+                    const cleanedKey = key
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(" ");
+                    if (cleanedKey === "Body Locations") {
+                      return (
+                        <div key={index}>
+                          <Row className="mb-2 text-center">
+                            <Form.Label>{cleanedKey}</Form.Label>
+                          </Row>
+                          <Row className="mb-2">
+                            {getFormType(cleanedKey, val)}
+                          </Row>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <Row className="mb-2" key={index}>
+                          <Col md={3}>
+                            <Form.Label>{cleanedKey}</Form.Label>
+                          </Col>
+                          <Col md={9}>{getFormType(cleanedKey, val)}</Col>
+                        </Row>
+                      );
+                    }
                   })}
                 </Tab.Pane>
                 <Tab.Pane eventKey="third">
                   <Card.Title>Medications Taken</Card.Title>
+                  <Container className="mb-3">
+                    {entry.preferences_snapshot?.active_modules.includes(
+                      "medications",
+                    ) && (
+                      <>
+                        {medications?.map((med, i) => (
+                          <div key={i} className="mb-3">
+                            <Stack gap={3} key={i}>
+                              <Form.Control
+                                placeholder="Name"
+                                value={med.name}
+                                onChange={(e) =>
+                                  updateMedication(i, { name: e.target.value })
+                                }
+                              />
+                              <Form.Control
+                                type="number"
+                                placeholder="Dosage"
+                                value={med.dosage ?? ""}
+                                onChange={(e) =>
+                                  updateMedication(i, {
+                                    dosage: Number(e.target.value),
+                                  })
+                                }
+                              />
+                              <Form.Control
+                                placeholder="Unit (mg, ml…)"
+                                value={med.unit ?? ""}
+                                onChange={(e) =>
+                                  updateMedication(i, { unit: e.target.value })
+                                }
+                              />
+                              <Form.Control
+                                type="datetime-local"
+                                value={
+                                  med.time_taken?.toISOString().slice(0, 16) ??
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  updateMedication(i, {
+                                    time_taken: new Date(e.target.value),
+                                  })
+                                }
+                              />
+                              <Button
+                                variant="danger"
+                                onClick={() => removeMedication(i)}
+                              >
+                                Remove
+                              </Button>
+                            </Stack>
+                          </div>
+                        ))}
 
-                  <Form.Label>Medications</Form.Label>
-                  {entry.medications?.map((med, i) => (
-                    <div key={i}>
-                      <Form.Control
-                        placeholder="Name"
-                        value={med.name}
-                        onChange={(e) =>
-                          updateMedication(i, { name: e.target.value })
-                        }
-                      />
-                      <Form.Control
-                        type="number"
-                        placeholder="Dosage"
-                        value={med.dosage ?? ""}
-                        onChange={(e) =>
-                          updateMedication(i, {
-                            dosage: Number(e.target.value),
-                          })
-                        }
-                      />
-                      <Form.Control
-                        placeholder="Unit (mg, ml…)"
-                        value={med.unit ?? ""}
-                        onChange={(e) =>
-                          updateMedication(i, { unit: e.target.value })
-                        }
-                      />
-                      <Form.Control
-                        type="datetime-local"
-                        value={med.time_taken?.toISOString().slice(0, 16) ?? ""}
-                        onChange={(e) =>
-                          updateMedication(i, {
-                            time_taken: new Date(e.target.value),
-                          })
-                        }
-                      />
-                      <Button
-                        variant="danger"
-                        onClick={() => removeMedication(i)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                  <Button variant="secondary" onClick={addMedication}>
-                    + Add Medication
-                  </Button>
+                        <Button variant="secondary" onClick={addMedication}>
+                          + Add Medication
+                        </Button>
+                      </>
+                    )}
+                  </Container>
                 </Tab.Pane>
               </Tab.Content>
-              <Button variant="primary">Edit Entry</Button>
+              <Button onClick={onSubmit} variant="primary">
+                Save Entry
+              </Button>
             </Card.Body>
           </Card>
         </Tab.Container>

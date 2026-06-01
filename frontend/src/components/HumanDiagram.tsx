@@ -9,10 +9,6 @@ export const HumanDiagram = ({
   selectedLocations,
   onLocationToggle,
 }: HumanDiagramProps) => {
-  const handlePathClick = (index: string) => {
-    onLocationToggle(index);
-  };
-
   const ellipseData = [
     {
       id: "head",
@@ -137,14 +133,13 @@ export const HumanDiagram = ({
   ];
 
   return (
-    <Container className="mt-5">
+    <Container>
       <Row>
         <Col md={8}>
           <Card className="p-3 shadow-sm">
             <svg
               className="svgvector"
-              width="375.053pt"
-              height="441.812pt"
+              style={{ height: "auto" }}
               viewBox="0 0 375.053 441.812"
             >
               {ellipseData.map((val, index) => {
@@ -165,7 +160,7 @@ export const HumanDiagram = ({
                     strokeWidth="3.75053000401065"
                     strokeLinecap="square"
                     strokeLinejoin="bevel"
-                    onClick={() => handlePathClick(val.id)}
+                    onClick={() => onLocationToggle(val.id)}
                   />
                 );
               })}
@@ -178,11 +173,7 @@ export const HumanDiagram = ({
             <Card.Body>
               <Card.Title>Selected Regions</Card.Title>
               {selectedLocations.length > 0 ? (
-                <Alert variant="success">
-                  {selectedLocations
-                    .map((_, i) => ellipseData[i].id)
-                    .join(", ")}
-                </Alert>
+                <Alert variant="success">{selectedLocations.join(", ")}</Alert>
               ) : (
                 <Alert variant="secondary">Click a region to select it.</Alert>
               )}
