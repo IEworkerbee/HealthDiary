@@ -34,7 +34,7 @@ export const DiaryCard = ({ entry }: Props) => {
     navigate(`/editentry/${entry._id}`);
   }
 
-  const medicationHeaders = ["Name", "Dosage", "Unit", "Time"];
+  const medicationHeaders = ["Dosage", "Name", "Time", "Unit"];
   return (
     <>
       <Tab.Container defaultActiveKey="first">
